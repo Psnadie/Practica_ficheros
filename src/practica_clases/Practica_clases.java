@@ -28,6 +28,7 @@ public class Practica_clases {
             System.out.println("5. Opciones de presupuesto");
             System.out.println("6. Guardar datos y salir");
             System.out.println("7. Salir sin guardar datos");
+            System.out.println("8. Cargar los datos de los archivos");
             System.out.print("Seleccione una opción: ");
             int opcion = sc.nextInt();
             int opcion2;
@@ -135,7 +136,7 @@ public class Practica_clases {
                     System.out.println("1. Crear Asignatura");
                     System.out.println("2. Eliminar Asignatura");
                     System.out.println("3. Ver Asignaturas");
-                    System.out.println("3. Salir");
+                    System.out.println("4. Salir");
                     System.out.print("Seleccione una opción: ");
                     opcion2 = sc.nextInt();
                     switch (opcion2) {
@@ -189,6 +190,10 @@ public class Practica_clases {
                     break;
                 case 7:
                     salir = true;
+                    break;
+                case 8:
+                    cargarDatos(profes, alum, asig, cursos);
+                    System.out.println("Datos cargados correctamente.");
                     break;
                 default:
                     System.out.println("Opción no válida, intente de nuevo.");
@@ -643,11 +648,10 @@ public static void AgregarAlumno(Alumno a, Curso c){
                 fwAsignaturas.close();
     
                 // Guardar cursos
-                FileWriter fwCursos = new FileWriter("Arch/ficheroCursos.txt");
+                FileWriter fwCursos = new FileWriter("Arch/ficheroCursos.txt", false);
                 for (Curso curso : cursos) {
                     if (curso != null) {
-                        fwCursos.write(curso.getAño() + ":" + curso.getNombre() + ":" +
-                                curso.getMatricula() + ":" + curso.getAula() + "\n");
+                        fwCursos.write(curso.volcado() + "\n");
                     }
                 }
                 fwCursos.close();
@@ -655,6 +659,93 @@ public static void AgregarAlumno(Alumno a, Curso c){
                 System.out.println("Datos guardados correctamente.");
             } catch (IOException e) {
                 System.out.println("Error al guardar los datos: " + e.getMessage());
+            }
+        }
+
+        public static void cargarDatos(Profesor[] profesores, Alumno[] alumnos, Asignaturas[] asignaturas, Curso[] cursos) {
+            try {
+                // Cargar los profesores
+                BufferedReader brProfesores = new BufferedReader(new FileReader("Arch/ficheroProfesores.txt"));
+                String linea;
+                int index = 0;
+                while ((linea = brProfesores.readLine()) != null) {
+                    String[] partes = linea.split(":");
+                    profesores[index++] = new Profesor(partes[0], partes[1], Integer.parseInt(partes[2]));
+                    profesores[index - 1].setHoras_trabajo(Integer.parseInt(partes[3]));
+                }
+                brProfesores.close();
+        
+                // Cargar los alumnos
+                BufferedReader brAlumnos = new BufferedReader(new FileReader("Arch/ficheroAlumnos.txt"));
+                index = 0;
+                while ((linea = brAlumnos.readLine()) != null) {
+                    String[] partes = linea.split(":");
+                    alumnos[index++] = new Alumno(partes[0], partes[1], partes[2], Integer.parseInt(partes[3]), partes[4]);
+                }
+                brAlumnos.close();
+        
+                // Cargar las asignaturas
+                BufferedReader brAsignaturas = new BufferedReader(new FileReader("Arch/ficheroAsignaturas.txt"));
+                index = 0;
+                while ((linea = brAsignaturas.readLine()) != null) {
+                    String[] partes = linea.split(":");
+                    asignaturas[index++] = new Asignaturas(Integer.parseInt(partes[3]), Integer.parseInt(partes[0]), partes[1]);
+                    if (!partes[2].isEmpty()) {
+                        for (Profesor profesor : profesores) {
+                            if (profesor != null && profesor.getDni().equals(partes[2])) {
+                                asignaturas[index - 1].setProfesor(profesor);
+                                break;
+                            }
+                        }
+                    }
+                }
+                brAsignaturas.close();
+        
+                // Cargar los cursos
+                BufferedReader brCursos = new BufferedReader(new FileReader("Arch/ficheroCursos.txt"));
+                index = 0;
+                while ((linea = brCursos.readLine()) != null) {
+                    // Dividir la línea en partes principales: año-nombre-asignaturas-alumnos
+                    String[] partes = linea.split("-");
+                    int año = Integer.parseInt(partes[0]);
+                    String nombre = partes[1];
+
+                    // Procesar asignaturas
+                    String[] asignaturasCodigos = partes[2].split(":");
+                    Asignaturas[] cursoAsignaturas = new Asignaturas[5];
+                    for (int i = 0; i < asignaturasCodigos.length; i++) {
+                        if (!asignaturasCodigos[i].isEmpty()) {
+                            for (Asignaturas asignatura : asignaturas) {
+                                if (asignatura != null && asignatura.getNombre().equals(asignaturasCodigos[i])) {
+                                    cursoAsignaturas[i] = asignatura;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Procesar alumnos
+                    String[] alumnosDnis = partes[3].split(":");
+                    Alumno[] cursoAlumnos = new Alumno[30];
+                    for (int i = 0; i < alumnosDnis.length; i++) {
+                        if (!alumnosDnis[i].isEmpty()) {
+                            for (Alumno alumno : alumnos) {
+                                if (alumno != null && alumno.getDni().equals(alumnosDnis[i])) {
+                                    cursoAlumnos[i] = alumno;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    // Crear el curso y agregarlo al array
+                    cursos[index++] = new Curso(nombre, cursoAsignaturas, cursoAlumnos, año, 0, 0); // Aula y matrícula como placeholders
+                }
+                brCursos.close();
+        
+                System.out.println("Datos cargados correctamente.");
+            } catch (IOException e) {
+                System.out.println("Error al cargar los datos: " + e.getMessage());
             }
         }
     

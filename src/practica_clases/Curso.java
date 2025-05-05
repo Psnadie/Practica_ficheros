@@ -52,6 +52,24 @@ public class Curso {
     }
 }
     
+    public String volcado() {
+        StringBuilder sb = new StringBuilder();
+        sb.append(año).append("-").append(nombre).append("-");
+
+        // Agregar asignaturas
+        for (Asignaturas asignatura : asig) {
+            sb.append(asignatura != null ? asignatura.getNombre() : "").append(":");
+        }
+        sb.append("-");
+
+        // Agregar alumnos
+        for (Alumno alumno : alumnos) {
+            sb.append(alumno != null ? alumno.getDni() : "").append(":");
+        }
+
+        return sb.toString();
+    }
+
     public String getNombre() {
         return nombre;
     }
