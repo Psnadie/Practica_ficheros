@@ -66,7 +66,7 @@ public class Curso {
         for (Alumno alumno : alumnos) {
             sb.append(alumno != null ? alumno.getDni() : "").append(":");
         }
-
+        sb.append("-").append(aula).append("-").append(matricula).append("\n");
         return sb.toString();
     }
 
