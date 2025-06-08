@@ -1,7 +1,11 @@
 package practica_clases;
 import java.io.*;
 import java.util.Scanner;
+import java.util.List;
+
 public class Practica_clases {
+    private static Profesor[] profes;
+    
     public static void main(String[] args) {
         System.out.println("==============================================");
         System.out.println("     BIENVENIDO A LA ESCUELA ARTE GRANADA     ");
@@ -12,14 +16,12 @@ public class Practica_clases {
         if (res.equalsIgnoreCase("si")) {
             System.out.println("Cargando datos...");
 
-            // aqui va el metodo de sacar el numero de aulas
             int numAulas = obtenerNumeroDeAulas();
-            // Inicializar los arrays de objetos para la carga de datos desde el fichero
             Boolean[] aulas = new Boolean[numAulas];
             for (int i = 0; i < aulas.length; i++) {
                 aulas[i] = false;
             }
-            Profesor[] profes = new Profesor[numAulas];
+            profes = new Profesor[numAulas];
             Asignaturas[] asig = new Asignaturas[numAulas*5];
             Alumno[] alum = new Alumno[numAulas*30];
             Curso[] cursos = new Curso[numAulas];
@@ -27,7 +29,6 @@ public class Practica_clases {
 
             cargarDatos(profes, alum, asig, cursos);
 
-            // Menu principal
             while (!salir) {
                 System.out.println("\n--- MENÚ ESCUELA ---");
                 System.out.println("1. Opciones Alumno");
@@ -41,7 +42,7 @@ public class Practica_clases {
                 System.out.print("Seleccione una opción: ");
                 int opcion = sc.nextInt();
                 int opcion2;
-                sc.nextLine(); // Consumir el salto de línea
+                sc.nextLine();
                 
                 switch (opcion) {
                     case 1:
@@ -49,15 +50,18 @@ public class Practica_clases {
                         System.out.println("1. Agregar Alumno");
                         System.out.println("2. Eliminar Alumno");
                         System.out.println("3. Ver Alumnos");
-                        System.out.println("4. Salir");
+                        System.out.println("4. Agregar Calificación");
+                        System.out.println("5. Ver Boletín de Notas");
+                        System.out.println("6. Salir");
                         System.out.print("Seleccione una opción: ");
                         opcion2 = sc.nextInt();
                         switch (opcion2) {
                             case 1:
-                                Alumno a = new Alumno();
-                                a.copiarDesde(CrearAlumno());
-                                Rellenar(alum,a );
-                                Matricular(a, cursos);
+                                Alumno nuevoAlumno = CrearAlumno();
+                                if (nuevoAlumno != null) {
+                                    Rellenar(alum, nuevoAlumno);
+                                    Matricular(nuevoAlumno, cursos);
+                                }
                                 break;
                             case 2: 
                                 sc.nextLine();
@@ -68,7 +72,41 @@ public class Practica_clases {
                             case 3:
                                 ImprimirAlumnos(alum);
                                 break;
-                            case 4: 
+                            case 4:
+                                sc.nextLine();
+                                System.out.println("Ingrese el DNI del Alumno: ");
+                                String dniAlumno = sc.nextLine();
+                                Alumno alumnoCalif = null;
+                                for (Alumno al : alum) {
+                                    if (al != null && al.getDni().equals(dniAlumno)) {
+                                        alumnoCalif = al;
+                                        break;
+                                    }
+                                }
+                                if (alumnoCalif != null) {
+                                    agregarCalificacion(alumnoCalif);
+                                } else {
+                                    System.out.println("Alumno no encontrado.");
+                                }
+                                break;
+                            case 5:
+                                sc.nextLine();
+                                System.out.println("Ingrese el DNI del Alumno: ");
+                                dniAlumno = sc.nextLine();
+                                alumnoCalif = null;
+                                for (Alumno al : alum) {
+                                    if (al != null && al.getDni().equals(dniAlumno)) {
+                                        alumnoCalif = al;
+                                        break;
+                                    }
+                                }
+                                if (alumnoCalif != null) {
+                                    mostrarBoletin(alumnoCalif);
+                                } else {
+                                    System.out.println("Alumno no encontrado.");
+                                }
+                                break;
+                            case 6: 
                                 break;  
                         }
                         break;
@@ -83,21 +121,52 @@ public class Practica_clases {
                         opcion2 = sc.nextInt();
                         switch (opcion2) {
                             case 1:
-                                Rellenar(profes, CrearProfesor());
+                                Profesor nuevoProf = CrearProfesor();
+                                if (nuevoProf != null) {
+                                    Rellenar(profes, nuevoProf);
+                                }
                                 break;
                             case 2: 
-                                    sc.nextLine();
-                                    System.out.println("Ingrese el DNI del Profesor que desea asignar: ");
-                                    String dn = sc.nextLine();
-                                    System.out.println("Ingrese el codigo de la Asignatura: ");
-                                    int codigo = sc.nextInt();
+                                sc.nextLine();
+                                System.out.println("Ingrese el DNI del Profesor que desea asignar: ");
+                                String dn = sc.nextLine();
+                                System.out.println("Ingrese el codigo de la Asignatura: ");
+                                int codigo = sc.nextInt();
+                                
+                                // Verificar si es profesor auxiliar
+                                Profesor prof = null;
+                                for (Profesor p : profes) {
+                                    if (p != null && p.getDni().equals(dn)) {
+                                        prof = p;
+                                        break;
+                                    }
+                                }
+                                
+                                if (prof instanceof ProfesorAuxiliar) {
+                                    ProfesorAuxiliar aux = (ProfesorAuxiliar) prof;
+                                    // Buscar la asignatura
+                                    Asignaturas asignatura = null;
+                                    for (Asignaturas a : asig) {
+                                        if (a != null && a.getCodigo() == codigo) {
+                                            asignatura = a;
+                                            break;
+                                        }
+                                    }
+                                    
+                                    if (asignatura != null && aux.puedeAsignarAsignatura(asignatura)) {
+                                        Asignar(asig, profes, dn, codigo);
+                                    } else {
+                                        System.out.println("El profesor auxiliar no puede ser asignado a esta asignatura.");
+                                    }
+                                } else {
                                     Asignar(asig, profes, dn, codigo);
+                                }
                                 break;
                             case 3:
                                 sc.nextLine();
                                 System.out.println("Ingrese el DNI del Profesor a eliminar");
                                 String p = sc.nextLine();
-                                Eliminar(profes,p);
+                                Eliminar(profes, p);
                                 break;
                             case 4: 
                                 ImprimirProfesores(profes);
@@ -219,7 +288,7 @@ public class Practica_clases {
             for (int i = 0; i < aulas.length; i++) {
                 aulas[i] = false;
             }
-            Profesor[] profes = new Profesor[numAulas];
+            profes = new Profesor[numAulas];
             Asignaturas[] asig = new Asignaturas[numAulas*5];
             Alumno[] alum = new Alumno[numAulas*30];
             Curso[] cursos = new Curso[numAulas];
@@ -252,10 +321,11 @@ public class Practica_clases {
                         opcion2 = sc.nextInt();
                         switch (opcion2) {
                             case 1:
-                                Alumno a = new Alumno();
-                                a.copiarDesde(CrearAlumno());
-                                Rellenar(alum,a );
-                                Matricular(a, cursos);
+                                Alumno nuevoAlumno = CrearAlumno();
+                                if (nuevoAlumno != null) {
+                                    Rellenar(alum, nuevoAlumno);
+                                    Matricular(nuevoAlumno, cursos);
+                                }
                                 break;
                             case 2: 
                                 sc.nextLine();
@@ -444,42 +514,110 @@ public class Practica_clases {
             }
         } while (sueldo < 10);
 
-        // Crear  Profesor
+        System.out.println("¿Es profesor auxiliar? (si/no): ");
+        sc.nextLine(); // Limpiar buffer
+        String esAuxiliar = sc.nextLine();
+        
+        if (esAuxiliar.equalsIgnoreCase("si")) {
+            System.out.println("Ingrese el DNI del profesor al que sustituirá: ");
+            String dniSustituido = sc.nextLine();
+            // Buscar el profesor a sustituir
+            Profesor profesorSustituido = buscarProfesor(dniSustituido);
+            if (profesorSustituido != null) {
+                return new ProfesorAuxiliar(dni, nombre, profesorSustituido);
+            } else {
+                System.out.println("No se encontró el profesor a sustituir. Se creará como profesor regular.");
+            }
+        }
+
+        // Crear profesor regular
         Profesor profe = new Profesor(dni, nombre, sueldo);
         System.out.println("Profesor creado correctamente.");
         return profe;
     }
     public static Alumno CrearAlumno(){
         Scanner sc = new Scanner(System.in);
-        String dni, nombre, apellidos, pago = "";
+        String dni, nombre, apellidos, tipoPago;
         int año;
+        
         System.out.println("Ingrese el nombre del alumno: ");
         nombre = sc.nextLine();
+        
         System.out.println("Ingrese el DNI del alumno: ");
         dni = sc.nextLine();
-        System.out.println("Ingrese el apeliido del alumno");
+        
+        System.out.println("Ingrese el apellido del alumno");
         apellidos = sc.nextLine();
+        
         System.out.println("Ingrese el año de su alumno: ");
         año = sc.nextInt();
+        sc.nextLine(); // Limpiar buffer
+        
         do {
-            System.out.println("Ingrese el tipo de pago de su alumno 1/Completo 2/Plazos");
+            System.out.println("Ingrese el tipo de pago del alumno (1/Completo 2/Plazos)");
             System.out.println("Para seleccionar ingrese (1) o (2)");
             int trig = sc.nextInt();
+            
             if (trig == 1) {
-                pago = "Completo";
+                return new AlumnoPUnico(dni, nombre, apellidos, año);
             }
             else if (trig == 2) {
-                pago = "Plazos";
+                return new AlumnoPPlazos(dni, nombre, apellidos, año);
             }
-            else{
-                System.out.println("ERROR: Opcion invalida, intente nuevamente: ");
+            else {
+                System.out.println("ERROR: Opción inválida, intente nuevamente: ");
                 System.out.println("");
             }
-        } while (!pago.equals("Plazos") && !pago.equals("Completo"));
-        Alumno alumno = new Alumno(dni, nombre, apellidos, año, pago);
-        return alumno;
+        } while (true);
     }
     
+    // Método auxiliar para buscar un profesor por DNI
+    private static Profesor buscarProfesor(String dni) {
+        // Aquí deberías implementar la lógica para buscar en tu array de profesores
+        // Este es solo un ejemplo, ajústalo según tu implementación
+        for (Profesor p : profes) {
+            if (p != null && p.getDni().equals(dni)) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    // Nuevo método para agregar calificaciones
+    public static void agregarCalificacion(Alumno alumno) {
+        Scanner sc = new Scanner(System.in);
+        System.out.println("Ingrese el código de la asignatura: ");
+        int codigoAsignatura = sc.nextInt();
+        
+        System.out.println("Ingrese la nota (0-10): ");
+        double nota = sc.nextDouble();
+        
+        if (nota >= 0 && nota <= 10) {
+            alumno.agregarCalificacion(codigoAsignatura, nota);
+            System.out.println("Calificación agregada correctamente.");
+        } else {
+            System.out.println("Error: La nota debe estar entre 0 y 10.");
+        }
+    }
+
+    // Método para mostrar el boletín de notas
+    public static void mostrarBoletin(Alumno alumno) {
+        System.out.println("\n=== BOLETÍN DE NOTAS ===");
+        System.out.println("Alumno: " + alumno.getNombre() + " " + alumno.getApellidos());
+        System.out.println("DNI: " + alumno.getDni());
+        System.out.println("Año: " + alumno.getAño());
+        System.out.println("\nCalificaciones:");
+        
+        List<Calificacion> calificaciones = alumno.getCalificaciones();
+        if (calificaciones.isEmpty()) {
+            System.out.println("No hay calificaciones registradas.");
+        } else {
+            for (Calificacion cal : calificaciones) {
+                System.out.println("Asignatura " + cal.getCodigoAsignatura() + ": " + cal.getNota());
+            }
+        }
+    }
+
 public static Curso CrearCurso(Boolean[] aula, Asignaturas[] asig, Alumno[] alumnos, int año) {
     Scanner sc = new Scanner(System.in);
     int contAsig = 0;
@@ -647,7 +785,7 @@ public static void AgregarAlumno(Alumno a, Curso c){
                     Asignaturas a = cursos[i].getAsig()[j];
                     // Obtener el salario por hora y las horas de trabajo del profesor
                     int salarioPorHora = a.getProfesor().getSueldo_hora();
-                    int horasTrabajo = a.getProfesor().getSueldo_hora();
+                    int horasTrabajo = a.getProfesor().getHoras_trabajo();
 
                     // Calculamos el gasto mensual para ese profesor
                     double salarioMensual = salarioPorHora * horasTrabajo * 4; // 4 semanas por mes
@@ -820,33 +958,67 @@ public static void AgregarAlumno(Alumno a, Curso c){
         public static void guardarDatos(Profesor[] profesores, Alumno[] alumnos, Asignaturas[] asignaturas, Curso[] cursos, int numAulas) {
             File carpeta = new File("Arch");
             if (!carpeta.exists()) {
-                carpeta.mkdir();
-                System.out.println("Carpeta 'Arch' creada.");
+                if (carpeta.mkdir()) {
+                    System.out.println("Carpeta 'Arch' creada exitosamente.");
+                } else {
+                    System.out.println("Error al crear la carpeta 'Arch'. No se pueden guardar los datos.");
+                    return;
+                }
             }
-    
+
+            File fProfesores = new File("Arch/ficheroProfesores.txt");
+            File fAlumnos = new File("Arch/ficheroAlumnos.txt");
+            File fAsignaturas = new File("Arch/ficheroAsignaturas.txt");
+            File fCursos = new File("Arch/ficheroCursos.txt");
+            File fCalificaciones = new File("Arch/ficheroCalificaciones.txt");
+
             try {
+                if (!fProfesores.exists()) fProfesores.createNewFile();
+                if (!fAlumnos.exists()) fAlumnos.createNewFile();
+                if (!fAsignaturas.exists()) fAsignaturas.createNewFile();
+                if (!fCursos.exists()) fCursos.createNewFile();
+                if (!fCalificaciones.exists()) fCalificaciones.createNewFile();
+
                 // Guardar profesores
-                FileWriter fwProfesores = new FileWriter("Arch/ficheroProfesores.txt");
+                FileWriter fwProfesores = new FileWriter(fProfesores);
                 for (Profesor profesor : profesores) {
                     if (profesor != null) {
-                        fwProfesores.write(profesor.getDni() + ":" + profesor.getNombre() + ":" +
-                                profesor.getSueldo_hora() + ":" + profesor.getHoras_trabajo() + "\n");
+                        if (profesor instanceof ProfesorAuxiliar) {
+                            ProfesorAuxiliar aux = (ProfesorAuxiliar) profesor;
+                            fwProfesores.write("AUX:" + profesor.getDni() + ":" + profesor.getNombre() + ":" +
+                                    profesor.getSueldo_hora() + ":" + profesor.getHoras_trabajo() + ":" +
+                                    aux.getProfesorSustituido().getDni() + "\n");
+                        } else {
+                            fwProfesores.write("REG:" + profesor.getDni() + ":" + profesor.getNombre() + ":" +
+                                    profesor.getSueldo_hora() + ":" + profesor.getHoras_trabajo() + "\n");
+                        }
                     }
                 }
                 fwProfesores.close();
-    
+
                 // Guardar alumnos
-                FileWriter fwAlumnos = new FileWriter("Arch/ficheroAlumnos.txt");
+                FileWriter fwAlumnos = new FileWriter(fAlumnos);
+                FileWriter fwCalificaciones = new FileWriter(fCalificaciones);
+                
                 for (Alumno alumno : alumnos) {
                     if (alumno != null) {
-                        fwAlumnos.write(alumno.getDni() + ":" + alumno.getNombre() + ":" +
-                                alumno.getApellidos() + ":" + alumno.getAño() + ":" + alumno.getPago() + "\n");
+                        String tipo = (alumno instanceof AlumnoPUnico) ? "UNICO" : "PLAZOS";
+                        fwAlumnos.write(tipo + ":" + alumno.getDni() + ":" + alumno.getNombre() + ":" +
+                                alumno.getApellidos() + ":" + alumno.getAño() + "\n");
+                        
+                        // Guardar calificaciones
+                        for (Calificacion cal : alumno.getCalificaciones()) {
+                            fwCalificaciones.write(alumno.getDni() + ":" + 
+                                    cal.getCodigoAsignatura() + ":" + 
+                                    cal.getNota() + "\n");
+                        }
                     }
                 }
                 fwAlumnos.close();
-    
+                fwCalificaciones.close();
+
                 // Guardar asignaturas
-                FileWriter fwAsignaturas = new FileWriter("Arch/ficheroAsignaturas.txt");
+                FileWriter fwAsignaturas = new FileWriter(fAsignaturas);
                 for (Asignaturas asignatura : asignaturas) {
                     if (asignatura != null) {
                         fwAsignaturas.write(asignatura.getCodigo() + ":" + asignatura.getNombre() + ":" +
@@ -855,17 +1027,17 @@ public static void AgregarAlumno(Alumno a, Curso c){
                     }
                 }
                 fwAsignaturas.close();
-    
+
                 // Guardar cursos
-                FileWriter fwCursos = new FileWriter("Arch/ficheroCursos.txt", false);
-                fwCursos.write(numAulas + "\n"); // Guardar el número de aulas en la primera linea del documento
+                FileWriter fwCursos = new FileWriter(fCursos, false);
+                fwCursos.write(numAulas + "\n");
                 for (Curso curso : cursos) {
                     if (curso != null) {
                         fwCursos.write(curso.volcado() + "\n");
                     }
                 }
                 fwCursos.close();
-    
+
                 System.out.println("Datos guardados correctamente.");
             } catch (IOException e) {
                 System.out.println("Error al guardar los datos: " + e.getMessage());
@@ -874,27 +1046,65 @@ public static void AgregarAlumno(Alumno a, Curso c){
 
         public static void cargarDatos(Profesor[] profesores, Alumno[] alumnos, Asignaturas[] asignaturas, Curso[] cursos) {
             try {
-                // Cargar los profesores
+                // Cargar profesores
                 BufferedReader brProfesores = new BufferedReader(new FileReader("Arch/ficheroProfesores.txt"));
                 String linea;
                 int index = 0;
                 while ((linea = brProfesores.readLine()) != null) {
                     String[] partes = linea.split(":");
-                    profesores[index++] = new Profesor(partes[0], partes[1], Integer.parseInt(partes[2]));
-                    profesores[index - 1].setHoras_trabajo(Integer.parseInt(partes[3]));
+                    if (partes[0].equals("AUX")) {
+                        // Buscar el profesor sustituido
+                        Profesor sustituido = null;
+                        for (Profesor p : profesores) {
+                            if (p != null && p.getDni().equals(partes[5])) {
+                                sustituido = p;
+                                break;
+                            }
+                        }
+                        if (sustituido != null) {
+                            profesores[index] = new ProfesorAuxiliar(partes[1], partes[2], sustituido);
+                        }
+                    } else {
+                        profesores[index] = new Profesor(partes[1], partes[2], Integer.parseInt(partes[3]));
+                    }
+                    profesores[index].setHoras_trabajo(Integer.parseInt(partes[4]));
+                    index++;
                 }
                 brProfesores.close();
         
-                // Cargar los alumnos
+                // Cargar alumnos
                 BufferedReader brAlumnos = new BufferedReader(new FileReader("Arch/ficheroAlumnos.txt"));
                 index = 0;
                 while ((linea = brAlumnos.readLine()) != null) {
                     String[] partes = linea.split(":");
-                    alumnos[index++] = new Alumno(partes[0], partes[1], partes[2], Integer.parseInt(partes[3]), partes[4]);
+                    if (partes[0].equals("UNICO")) {
+                        alumnos[index] = new AlumnoPUnico(partes[1], partes[2], partes[3], Integer.parseInt(partes[4]));
+                    } else {
+                        alumnos[index] = new AlumnoPPlazos(partes[1], partes[2], partes[3], Integer.parseInt(partes[4]));
+                    }
+                    index++;
                 }
                 brAlumnos.close();
         
-                // Cargar las asignaturas
+                // Cargar calificaciones
+                BufferedReader brCalificaciones = new BufferedReader(new FileReader("Arch/ficheroCalificaciones.txt"));
+                while ((linea = brCalificaciones.readLine()) != null) {
+                    String[] partes = linea.split(":");
+                    String dniAlumno = partes[0];
+                    int codigoAsignatura = Integer.parseInt(partes[1]);
+                    double nota = Double.parseDouble(partes[2]);
+                    
+                    // Buscar el alumno y agregar la calificación
+                    for (Alumno alumno : alumnos) {
+                        if (alumno != null && alumno.getDni().equals(dniAlumno)) {
+                            alumno.agregarCalificacion(codigoAsignatura, nota);
+                            break;
+                        }
+                    }
+                }
+                brCalificaciones.close();
+        
+                // Cargar asignaturas
                 BufferedReader brAsignaturas = new BufferedReader(new FileReader("Arch/ficheroAsignaturas.txt"));
                 index = 0;
                 while ((linea = brAsignaturas.readLine()) != null) {
@@ -911,17 +1121,15 @@ public static void AgregarAlumno(Alumno a, Curso c){
                 }
                 brAsignaturas.close();
         
-                // Cargar los cursos
+                // Cargar cursos
                 BufferedReader brCursos = new BufferedReader(new FileReader("Arch/ficheroCursos.txt"));
                 String basura = brCursos.readLine();
                 index = 0;
                 while ((linea = brCursos.readLine()) != null) {
-                    // Dividir la línea en partes principales: año-nombre-asignaturas-alumnos
                     String[] partes = linea.split("-");
                     int año = Integer.parseInt(partes[0]);
                     String nombre = partes[1];
 
-                    // Procesar asignaturas
                     String[] asignaturasCodigos = partes[2].split(":");
                     Asignaturas[] cursoAsignaturas = new Asignaturas[5];
                     for (int i = 0; i < asignaturasCodigos.length; i++) {
@@ -935,7 +1143,6 @@ public static void AgregarAlumno(Alumno a, Curso c){
                         }
                     }
 
-                    // Procesar alumnos
                     String[] alumnosDnis = partes[3].split(":");
                     Alumno[] cursoAlumnos = new Alumno[30];
                     for (int i = 0; i < alumnosDnis.length; i++) {
@@ -948,13 +1155,11 @@ public static void AgregarAlumno(Alumno a, Curso c){
                             }
                         }
                     }
-                    // Procesar aula y matricula
 
                     int aula = Integer.parseInt(partes[4]);
                     int matricula = Integer.parseInt(partes[5]);
 
-                    // Crear el curso y agregarlo al array
-                    cursos[index++] = new Curso(nombre, cursoAsignaturas, cursoAlumnos, año, aula, matricula); // Aula y matrícula como placeholders
+                    cursos[index++] = new Curso(nombre, cursoAsignaturas, cursoAlumnos, año, aula, matricula);
                 }
                 brCursos.close();
         
